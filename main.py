@@ -1,5 +1,6 @@
 import os
 import requests
+from pydantic import BaseModel
 from supabase import create_client, Client
 from fastapi import FastAPI
 from fastapi.responses import Response
@@ -22,22 +23,28 @@ SUPABASE_KEY = os.environ["SUPABASE_KEY"]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
+class TTSRequest(BaseModel):
+    text: str
+    user_id: str
+    gender: str
+
+
 @app.get("/")
 def index():
     return {"message": "Hello World"}
 
 
 @app.post("/tts")
-def tts(text: str, user_id: str, gender: str):
+def tts(request: TTSRequest):
     """
     Text-to-Speech endpoint.
     :param text: The text to convert to speech.
     :return: An MP3 file containing the speech.
     """
-    response = supabase.table("user_voices").select("*").filter("user_id", "eq", user_id).execute()
+    response = supabase.table("user_voices").select("*").filter("user_id", "eq", request.user_id).execute()
     voice_id = response.data[0]['elevenlabs_voice_id']
     if voice_id is None:
-        if gender == "m":
+        if request.gender == "m":
             voice_id = "tzHEU0BULePYMOTlJocD"
         else:
             voice_id = "Xb7hH8MSUJpSbSDYk0k2"
@@ -45,7 +52,7 @@ def tts(text: str, user_id: str, gender: str):
     resp = requests.post(f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}",
         headers={"Xi-Api-Key": ELEVENLABS_API_KEY},
         json={
-            "text": text,
+            "text": request.text,
             "model_id": "eleven_multilingual_v2",
         }
     )
