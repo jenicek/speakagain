@@ -3,8 +3,17 @@ import requests
 from supabase import create_client, Client
 from fastapi import FastAPI
 from fastapi.responses import Response
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://speak-again-v2.lovable.app"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 ELEVENLABS_API_KEY = os.environ["ELEVENLABS_API_KEY"]
